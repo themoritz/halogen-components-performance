@@ -1,0 +1,31 @@
+{
+  "name": "new-components",
+  "version": "0.0.0",
+  "authors": [
+    "Moritz Drexl <mdrexl@fastmail.fm>"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "purescript-halogen": "4be794a56a9910bcac4d8760eefc408c714d8d40",
+    "purescript-affjax": "0.7.0",
+    "purescript-lens": "0.9.0",
+    "purescript-index": "0.4.0",
+    "purescript-refractor": "paf31/purescript-refractor#841f0c1c74f86f509d31847ae9a808dbb435ee5b",
+    "purescript-optic": "0.8.0",
+    "purescript-argonaut-core": "0.2.0",
+    "purescript-argonaut-codecs": "0.3.0",
+    "purescript-string-parsers": "rubenmoor/purescript-string-parsers#master",
+    "purescript-random": "0.2.2"
+  },
+  "resolutions": {
+    "purescript-lens": "0.9.0",
+    "purescript-transformers": "^0.7.1",
+    "purescript-strings": "^0.7.0"
+  }
+}
