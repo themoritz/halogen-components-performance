@@ -23,7 +23,9 @@ import qualified Halogen.HTML.Events as E
 
 import Ticker (TickState(..), TickInput(..), ticker)
 
-data Input a = ReadTicks a
+data Input a
+  = ReadTicks a
+  | TickAll a
 
 type State = { tickA :: Maybe Int, tickB :: Maybe Int }
 
@@ -48,6 +50,8 @@ uiContainer = component render eval
                      , H.p_ [ H.p_ [ H.text $ "Last tick readings - A: " ++ (maybe "No reading" show st.tickA) ++ ", B: " ++ (maybe "No reading" show st.tickB) ]
                             , H.button [ E.onClick (E.input_ ReadTicks) ]
                                        [ H.text "Update reading" ]
+                            , H.button [ E.onClick (E.input_ TickAll) ]
+                                       [ H.text "Tick all" ]
                             ]
                      ]
 
@@ -57,6 +61,10 @@ uiContainer = component render eval
     b <- liftQuery $ query (TickPlaceholder "B") (request GetTick)
     modify (\_ -> { tickA: a, tickB: b })
     pure next
+  eval (TickAll next) = do
+    liftQuery $ query (TickPlaceholder "A") (action Tick)
+    liftQuery $ query (TickPlaceholder "B") (action Tick)
+    pure next
 
 ui :: forall g p. (Monad g, Plus g) => InstalledComponent State TickState Input TickInput g (Const Void) TickPlaceholder p
 ui = install uiContainer go
@@ -64,6 +72,7 @@ ui = install uiContainer go
   go :: TickPlaceholder -> ComponentState TickState TickInput g p
   go (TickPlaceholder "A") = Tuple ticker (TickState 0)
   go (TickPlaceholder "B") = Tuple ticker (TickState 100)
+  go _                     = Tuple ticker (TickState 0)
 
 main :: Eff (HalogenEffects ()) Unit
 main = runAff throwException (const (pure unit)) $ do
