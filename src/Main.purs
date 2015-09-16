@@ -7,6 +7,8 @@ import Control.Monad.Eff (Eff())
 import Control.Monad.Eff.Exception (throwException)
 import Control.Plus (Plus)
 
+import Data.Tuple
+import Data.Array (range)
 import Data.Const (Const())
 import Data.NaturalTransformation (Natural())
 import Data.Functor.Coproduct (Coproduct())
@@ -24,55 +26,51 @@ import qualified Halogen.HTML.Events as E
 import Ticker (TickState(..), TickInput(..), ticker)
 
 data Input a
-  = ReadTicks a
-  | TickAll a
+  = IncSize a
 
-type State = { tickA :: Maybe Int, tickB :: Maybe Int }
+type State = { width :: Int, height :: Int }
 
 initialState :: State
-initialState = { tickA: Nothing, tickB: Nothing }
+initialState = { width: 10, height: 10 }
 
-newtype TickPlaceholder = TickPlaceholder String
+data TickP = TickP Int Int
 
-instance eqTickPlaceholder :: Eq TickPlaceholder where
-  eq (TickPlaceholder x) (TickPlaceholder y) = eq x y
+instance eqTickP :: Eq TickP where
+  eq (TickP x y) (TickP i j) = eq x i && eq y j
 
-instance ordTickPlaceholder :: Ord TickPlaceholder where
-  compare (TickPlaceholder x) (TickPlaceholder y) = compare x y
+instance ordTickP :: Ord TickP where
+  compare (TickP x y) (TickP i j) = compare (Tuple x y) (Tuple i j)
 
-uiContainer :: forall g p. (Functor g) => ParentComponent State TickState Input TickInput g (Const Void) TickPlaceholder p
+--
+
+uiContainer :: forall g p. (Functor g) => ParentComponent State TickState Input TickInput g (Const Void) TickP p
 uiContainer = component render eval
+
+render :: Render State Input TickP
+render st = H.div_
+    [ H.button
+      [ E.onClick (E.input_ IncSize) ]
+      [ H.text "Increase size" ]
+    , H.table_ $ row <$> range 0 st.height
+    ]
   where
+    row y = H.tr_ $ cell y <$> range 0 st.width
+    cell y x = H.td_ [ H.Placeholder (TickP x y) ]
 
-  render :: Render State Input TickPlaceholder
-  render st = H.div_ [ H.Placeholder (TickPlaceholder "A")
-                     , H.Placeholder (TickPlaceholder "B")
-                     , H.p_ [ H.p_ [ H.text $ "Last tick readings - A: " ++ (maybe "No reading" show st.tickA) ++ ", B: " ++ (maybe "No reading" show st.tickB) ]
-                            , H.button [ E.onClick (E.input_ ReadTicks) ]
-                                       [ H.text "Update reading" ]
-                            , H.button [ E.onClick (E.input_ TickAll) ]
-                                       [ H.text "Tick all" ]
-                            ]
-                     ]
+eval :: forall g. (Functor g) => Eval Input State Input g
+eval (IncSize next) = do
+  modify (\r -> { width: r.width+10, height: r.height+10 })
+  pure next
 
-  eval :: Eval Input State Input (QueryF State TickState TickInput g TickPlaceholder p)
-  eval (ReadTicks next) = do
-    a <- liftQuery $ query (TickPlaceholder "A") (request GetTick)
-    b <- liftQuery $ query (TickPlaceholder "B") (request GetTick)
-    modify (\_ -> { tickA: a, tickB: b })
-    pure next
-  eval (TickAll next) = do
-    liftQuery $ query (TickPlaceholder "A") (action Tick)
-    liftQuery $ query (TickPlaceholder "B") (action Tick)
-    pure next
+--
 
-ui :: forall g p. (Monad g, Plus g) => InstalledComponent State TickState Input TickInput g (Const Void) TickPlaceholder p
+ui :: forall g p. (Monad g, Plus g) => InstalledComponent State TickState Input TickInput g (Const Void) TickP p
 ui = install uiContainer go
   where
-  go :: TickPlaceholder -> ComponentState TickState TickInput g p
-  go (TickPlaceholder "A") = Tuple ticker (TickState 0)
-  go (TickPlaceholder "B") = Tuple ticker (TickState 100)
-  go _                     = Tuple ticker (TickState 0)
+  go :: TickP -> ComponentState TickState TickInput g p
+  go (TickP x y) = Tuple ticker (TickState (x+y))
+
+--
 
 main :: Eff (HalogenEffects ()) Unit
 main = runAff throwException (const (pure unit)) $ do
