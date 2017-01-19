@@ -25,11 +25,6 @@ gulp.task("make", function () {
   });
 });
 
-gulp.task("dotpsci", function () {
-  return purescript.psci({ src: sources, ffi: foreigns })
-    .pipe(gulp.dest("."));
-});
-
 gulp.task("bundle", ["make"], function () {
   return purescript.pscBundle({
     src: "output/**/*.js",
